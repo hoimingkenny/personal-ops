@@ -52,3 +52,13 @@ output "cloudwatch_log_group" {
   description = "ECS CloudWatch log group"
   value       = aws_cloudwatch_log_group.ecs.name
 }
+
+output "eventbridge_poll_rule_name" {
+  description = "EventBridge rule name for scheduled poller RunTask"
+  value       = aws_cloudwatch_event_rule.poll_schedule.name
+}
+
+output "ecs_poller_task_definition_arn" {
+  description = "ECS task definition ARN for one-shot poller tasks"
+  value       = aws_ecs_task_definition.poller.arn
+}

@@ -2,7 +2,7 @@
 
 Short-lived AWS deployment to prove cloud + CI/CD. **Not** a 24/7 production environment. Tear down after screenshots and smoke tests.
 
-See also: [CI/CD](./ci-cd.md), [ADR 0001](./adr/0001-pipeline-deploy-over-gitops-for-aws.md), [ADR 0002](./adr/0002-full-vpc-private-rds.md).
+See also: [CI/CD](./ci-cd.md), [ADR index](./adr/README.md), [ADR 0001](./adr/0001-aws-pipeline-deploy-over-gitops.md), [ADR 0002](./adr/0002-aws-full-vpc-private-rds.md).
 
 ## Prerequisites
 
@@ -55,7 +55,8 @@ Save under `docs/aws-demo/` (gitignored if containing account IDs):
 
 - Terraform plan/apply summary
 - ECR image with SHA tag
-- ECS running task
+- ECS running task (API service)
+- EventBridge rule + successful poller RunTask in ECS **Stopped** tasks
 - RDS in private subnet (console screenshot)
 - Secrets Manager secret reference in task definition
 - Successful GitHub Actions run
@@ -90,3 +91,4 @@ Verify RDS and NAT gateway are gone — these are the main cost drivers if left 
 | App can't reach RDS | ECS task SG → RDS SG on 5432; JDBC URL from Secrets Manager |
 | App can't reach upstream APIs | NAT gateway route on private subnet route table |
 | Readiness probe fails | RDS reachable; Flyway migrated; source health thresholds |
+| EventBridge not starting pollers | Rule enabled; IAM `eventbridge_ecs` role; poller task definition; check ECS **Stopped** tasks and CloudWatch log stream prefix `poller` |

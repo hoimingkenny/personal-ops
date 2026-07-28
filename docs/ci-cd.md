@@ -1,6 +1,6 @@
 # CI/CD
 
-Enterprise-shaped pipeline for a Spring Boot service. AWS demo uses **pipeline-triggered deploy to ECS**; see [ADR 0001](./adr/0001-pipeline-deploy-over-gitops-for-aws.md) for why not GitOps in v1.
+Enterprise-shaped pipeline for a Spring Boot service. AWS demo uses **pipeline-triggered deploy to ECS**; see [ADR 0001](./adr/0001-aws-pipeline-deploy-over-gitops.md) for why not GitOps in v1.
 
 ## Workflows
 
@@ -29,7 +29,7 @@ Runs on `workflow_dispatch` or version tag (e.g. `v0.1.0`):
 
 ## AWS resources (Terraform)
 
-Full VPC layout — see [ADR 0002](./adr/0002-full-vpc-private-rds.md) and [aws-demo-runbook](./aws-demo-runbook.md).
+Full VPC layout — see [ADR 0002](./adr/0002-aws-full-vpc-private-rds.md) and [aws-demo-runbook](./aws-demo-runbook.md).
 
 | Resource | Role |
 |----------|------|
@@ -37,7 +37,9 @@ Full VPC layout — see [ADR 0002](./adr/0002-full-vpc-private-rds.md) and [aws-
 | NAT gateway | Outbound internet for ECS tasks (upstream API polling) |
 | VPC endpoints | ECR, Secrets Manager, CloudWatch Logs, S3 — less NAT traffic |
 | ALB | Public entry point; health check → `/actuator/health/readiness` |
-| ECS Fargate | App in **private subnets**, `assign_public_ip = false` |
+| ECS Fargate (service) | Always-on API in **private subnets** |
+| **EventBridge** | Schedule rule → **ECS RunTask** for one-shot poller jobs |
+| ECS Fargate (poller task) | Same image, `aws,poller` profile — poll once and exit |
 | RDS PostgreSQL | **Private subnet**, not publicly accessible |
 | Security groups | ALB → ECS :8080; ECS → RDS :5432 only |
 | ECR | Container registry |
@@ -78,7 +80,7 @@ Keeps the build half identical; only the deploy trigger changes. See ADR 0001.
 
 ## CV one-liner
 
-GitHub Actions (OIDC) builds and scans Docker images, pushes to ECR, and deploys to ECS Fargate with health-gated rollout; RDS and Secrets Manager via IAM task roles; infra in Terraform with documented apply/destroy runbook. Helm chart for local Kubernetes.
+GitHub Actions (OIDC) builds and scans Docker images, pushes to ECR, and deploys to ECS Fargate with health-gated rollout; **EventBridge schedules connector polls as one-shot ECS tasks**; RDS and Secrets Manager via IAM task roles; infra in Terraform with documented apply/destroy runbook. Helm chart for local Kubernetes.
 
 ## GitHub repository setup
 

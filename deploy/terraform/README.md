@@ -6,7 +6,7 @@ Full VPC layout for the Personal Ops OS cloud demo:
 - **Private subnets** — ECS Fargate tasks, RDS PostgreSQL
 - **NAT gateway** — outbound internet for pollers (upstream APIs)
 - **VPC endpoints** — ECR, Secrets Manager, CloudWatch Logs (reduce NAT traffic)
-- **ECR, ECS, RDS, Secrets Manager, IAM (OIDC for GitHub Actions)**
+- **ECR, ECS (API service + poller task def), RDS, Secrets Manager, IAM (OIDC for GitHub Actions, EventBridge → RunTask)**
 
 State: local by default. For team use, migrate to S3 backend + DynamoDB lock.
 

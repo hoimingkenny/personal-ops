@@ -58,6 +58,24 @@ variable "ecs_desired_count" {
   default     = 1
 }
 
+variable "ecs_poller_cpu" {
+  description = "Fargate CPU units for one-shot poller tasks"
+  type        = number
+  default     = 256
+}
+
+variable "ecs_poller_memory" {
+  description = "Fargate memory (MiB) for one-shot poller tasks"
+  type        = number
+  default     = 512
+}
+
+variable "poll_schedule_expression" {
+  description = "EventBridge schedule for connector polls (e.g. rate(5 minutes))"
+  type        = string
+  default     = "rate(5 minutes)"
+}
+
 variable "container_image" {
   description = "ECR image URI including tag — update after first push or wire from CI"
   type        = string
