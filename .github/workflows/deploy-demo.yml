@@ -1,0 +1,106 @@
+name: Deploy AWS Demo
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+# OIDC token for AWS — no long-lived access keys in GitHub secrets.
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  JAVA_VERSION: "21"
+  DOCKERFILE: deploy/docker/Dockerfile
+  # Override via repository variables (Settings → Secrets and variables → Actions)
+  AWS_REGION: ${{ vars.AWS_REGION || 'ap-southeast-1' }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY || 'personal-ops' }}
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER || 'personal-ops-demo' }}
+  ECS_SERVICE: ${{ vars.ECS_SERVICE || 'personal-ops-demo-service' }}
+  ECS_TASK_FAMILY: ${{ vars.ECS_TASK_FAMILY || 'personal-ops-demo' }}
+  CONTAINER_NAME: app
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: aws-demo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Build and test
+        run: ./mvnw -B verify
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+          docker build -f "${DOCKERFILE}" -t "${IMAGE_URI}" .
+          docker push "${IMAGE_URI}"
+          echo "image=${IMAGE_URI}" >> "${GITHUB_OUTPUT}"
+
+      - name: Download current ECS task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition "${ECS_TASK_FAMILY}" \
+            --query taskDefinition \
+            > task-definition.json
+
+      - name: Render task definition with new image
+        id: render-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      - name: Smoke test readiness endpoint
+        env:
+          ALB_DNS_NAME: ${{ vars.ALB_DNS_NAME }}
+        run: |
+          if [ -z "${ALB_DNS_NAME}" ]; then
+            echo "ALB_DNS_NAME not set — skip smoke test. Set vars.ALB_DNS_NAME from: terraform output -raw alb_dns_name"
+            exit 0
+          fi
+          for i in $(seq 1 12); do
+            if curl -sf "http://${ALB_DNS_NAME}/actuator/health/readiness"; then
+              echo ""
+              echo "Readiness check passed"
+              exit 0
+            fi
+            echo "Waiting for service... (${i}/12)"
+            sleep 10
+          done
+          echo "Readiness check failed"
+          exit 1

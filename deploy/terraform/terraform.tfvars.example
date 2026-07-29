@@ -1,0 +1,16 @@
+aws_region   = "ap-southeast-1"
+project_name = "personal-ops"
+environment  = "demo"
+
+# Set via environment: export TF_VAR_db_password='...'
+# db_password = "change-me"
+
+db_username = "personalops"
+db_name     = "personalops"
+
+# After first ECR push:
+# container_image = "123456789012.dkr.ecr.ap-southeast-1.amazonaws.com/personal-ops:abc123"
+
+# When wiring GitHub Actions OIDC:
+# github_org  = "your-github-username"
+# github_repo = "personal-ops"
