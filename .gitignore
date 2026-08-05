@@ -5,6 +5,17 @@ deploy/terraform/*.tfstate.*
 deploy/terraform/terraform.tfvars
 deploy/terraform/.terraform.lock.hcl
 
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+dist/
+build/
+*.egg-info/
+
 # AWS demo screenshots (may contain account IDs)
 docs/aws-demo/*.png
 docs/aws-demo/*.jpg
