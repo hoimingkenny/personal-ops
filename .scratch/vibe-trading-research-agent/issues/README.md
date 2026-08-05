@@ -1,24 +1,28 @@
 # Vibe Trading Research Agent Tickets
 
-These tickets encode the newly agreed scope for the next implementation pass.
+Status: ready-for-agent
 
-## MVP A — Digest-first agent workflow backend
+These tickets implement the approved spec as tracer-bullet slices. Each ticket should leave a demoable or externally verifiable behavior behind.
 
-1. `01-fastapi-spine.md` — FastAPI, Alembic, health endpoints, docker-compose Postgres
-2. `02-workflow-orchestrator.md` — workflow runs, tasks, attempts, events, retries, replay state
-3. `03-ingestion-document-workers.md` — financial news feeds and report/PDF URL ingestion
-4. `04-evidence-retrieval-memory.md` — chunks, citations, Postgres FTS, source metadata
-5. `05-skills-tools-registry.md` — skills, tool registry, typed tool-call logging
-6. `06-bounded-agent-runtime.md` — bounded ReAct loop, agent definitions, limits, structured outputs
-7. `07-digest-agents-quality-gates.md` — classifier/ranker, brief writer, citation verifier, digest composer
-8. `08-research-api-sse.md` — digest/report APIs, workflow status, SSE progress
-9. `09-aws-api-worker-scheduler.md` — ECS API/worker/scheduler roles, RDS, S3, EventBridge
-10. `10-eval-benchmark-cost.md` — eval harness, k6 benchmarks, token/cost tracking
-11. `11-readme-evidence.md` — portfolio case study, runbook evidence, incident notes
+## MVP A — Source-backed trading research workflow
+
+1. `01-fastapi-spine-and-local-runtime.md` — runnable FastAPI app, local runtime, health checks, migrations, and verification tooling
+2. `02-workflow-run-tracer-bullet.md` — create, claim, execute, retry, and inspect durable workflow runs
+3. `03-source-registry-and-news-ingestion.md` — governed source registry plus idempotent fixture news ingestion
+4. `04-report-url-to-evidence-library.md` — report/PDF URL ingestion into citation-ready evidence
+5. `05-evidence-search-api.md` — Postgres full-text evidence search with metadata and citation anchors
+6. `06-skills-and-tool-execution-registry.md` — typed skill/tool contracts with tool-call logging
+7. `07-bounded-agent-runtime.md` — bounded ReAct-style agent execution with limits and structured output
+8. `08-digest-workflow-tracer-bullet.md` — end-to-end draft digest workflow over source-backed evidence
+9. `09-citation-and-numeric-quality-gates.md` — publish/needs-review decision from citation and numeric checks
+10. `10-research-api-and-sse-progress.md` — workflow creation, artifact reads, quality results, and SSE progress
+11. `11-evaluation-replay-cost-and-benchmarks.md` — golden evals, replay, latency/cost metrics, and benchmark evidence
+12. `12-aws-api-worker-scheduler-demo.md` — ECS API/worker/scheduler demo with RDS, S3, EventBridge, logs, and smoke tests
+13. `13-portfolio-evidence-and-readme.md` — README, sample artifacts, eval/benchmark results, cloud proof, and CV framing
 
 ## Guardrails
 
 - Digest-first, not chatbot-first.
 - Financial content processing, not stock advice or trading.
-- Multi-agent workflow, not swarm branding.
-- Postgres FTS first; Redis/Milvus/OpenSearch/Mem0 only after measured need or explicit experiment.
+- Multi-agent workflow through durable orchestration, not swarm branding.
+- Postgres FTS first; Redis, Milvus, OpenSearch, pgvector, and Mem0 only after measured need or explicit experiment.
