@@ -34,8 +34,8 @@ Note outputs: `ecr_repository_url`, `alb_dns_name`, `ecs_cluster_name`, `ecs_ser
 ```bash
 ECR_URL=$(terraform output -raw ecr_repository_url)
 aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_URL"
-docker build -t personal-ops:demo ../../  # once Dockerfile exists
-docker tag personal-ops:demo "$ECR_URL:demo"
+docker build -t vibe-trading-research-agent:demo ../../  # once Dockerfile exists
+docker tag vibe-trading-research-agent:demo "$ECR_URL:demo"
 docker push "$ECR_URL:demo"
 aws ecs update-service --cluster "$(terraform output -raw ecs_cluster_name)" \
   --service "$(terraform output -raw ecs_service_name)" --force-new-deployment
@@ -44,7 +44,7 @@ aws ecs update-service --cluster "$(terraform output -raw ecs_cluster_name)" \
 ## 3. Smoke test
 
 ```bash
-curl -sf "http://$(terraform output -raw alb_dns_name)/actuator/health/readiness"
+curl -sf "http://$(terraform output -raw alb_dns_name)/health/ready"
 ```
 
 Expect `200` when the app and RDS are healthy.
@@ -56,7 +56,9 @@ Save under `docs/aws-demo/` (gitignored if containing account IDs):
 - Terraform plan/apply summary
 - ECR image with SHA tag
 - ECS running task (API service)
-- EventBridge rule + successful poller RunTask in ECS **Stopped** tasks
+- EventBridge rule + successful scheduler RunTask in ECS **Stopped** tasks
+- ECS worker service processing workflow tasks
+- S3 artifact paths for raw documents, extracted content, generated digest, or eval output
 - RDS in private subnet (console screenshot)
 - Secrets Manager secret reference in task definition
 - Successful GitHub Actions run
@@ -90,5 +92,5 @@ Verify RDS and NAT gateway are gone — these are the main cost drivers if left 
 | Can't pull ECR image | VPC endpoints for `ecr.api`, `ecr.dkr`, S3 gateway endpoint |
 | App can't reach RDS | ECS task SG → RDS SG on 5432; JDBC URL from Secrets Manager |
 | App can't reach upstream APIs | NAT gateway route on private subnet route table |
-| Readiness probe fails | RDS reachable; Flyway migrated; source health thresholds |
-| EventBridge not starting pollers | Rule enabled; IAM `eventbridge_ecs` role; poller task definition; check ECS **Stopped** tasks and CloudWatch log stream prefix `poller` |
+| Readiness probe fails | RDS reachable; Alembic migrated; dependency health checks |
+| EventBridge not starting scheduler runs | Rule enabled; IAM `eventbridge_ecs` role; scheduler task definition; check ECS **Stopped** tasks and CloudWatch log stream prefix `scheduler` |

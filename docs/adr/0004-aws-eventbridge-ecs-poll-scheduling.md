@@ -1,20 +1,25 @@
-# AWS demo: EventBridge schedules polls as ECS RunTask
+# AWS demo: EventBridge schedules workflow creation
 
-On AWS, **EventBridge → ECS Fargate RunTask** runs connector polls — not in-process `@Scheduled` on the API service.
+On AWS, **EventBridge → ECS Fargate RunTask** creates scheduled workflow runs, such as source ingestion and daily digest generation. Long-running ECS worker services execute workflow tasks asynchronously.
 
-**Layout:** ECS Service (always-on API) + EventBridge rule → one-shot poller task (same image, `aws,poller` profile: poll, write snapshots, exit).
+**Layout:** ECS API service (requests/status/SSE) + ECS worker service (task execution) + EventBridge-triggered scheduler task (creates due workflow runs). Same image, different runtime roles.
 
-**Why:** Credibly mention EventBridge on CV; separates pull from serve; K8s equivalent = CronJobs (scope B).
+**Why:** Keeps scheduled work outside the API service, makes workflow creation observable, and provides a production-shaped cloud story without introducing SQS or Step Functions before the MVP needs them.
 
-**Local dev:** `@Scheduled` in `local` profile is fine.
+**Scale-up path:** If RDS task polling becomes limiting, move task dispatch to SQS. If workflow graphs become complex enough to justify managed orchestration, evaluate Step Functions.
+
+**Local dev:** API and worker can run together under the `local` runtime role.
 
 ## App contract
 
-| Profile | Behaviour |
-|---------|-----------|
-| `aws` | Web API only |
-| `aws,poller` | No web server; poll once on startup; exit 0 |
+| Runtime role | Behaviour |
+|--------------|-----------|
+| `api` | Web API, workflow status, digest/report reads, SSE progress |
+| `worker` | No public web surface; polls durable tasks and executes pipeline/agent workers |
+| `scheduler` | No web server; creates scheduled workflow runs and exits |
 
 ## Consequences
 
-- `eventbridge.tf`, poller task definition, EventBridge IAM role
+- `eventbridge.tf`, scheduler task definition, EventBridge IAM role
+- Worker service needs database access, S3 artifact access, and model/API secrets
+- API service should not perform expensive document processing or agent execution on request threads

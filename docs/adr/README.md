@@ -1,12 +1,12 @@
 # Architecture Decision Records
 
-Index of locked decisions for Personal Ops OS. Each ADR is one trade-off; grouped by theme for navigation.
+Index of locked decisions for Vibe Trading Research Agent. Each ADR is one trade-off; grouped by theme for navigation.
 
 ## Product scope
 
 | ADR | Decision |
 |-----|----------|
-| [0003](./0003-product-scope-and-phasing.md) | MVP **A** (cloud-first), **A′** (performance), **B** (Helm); single-tenant; no platform |
+| [0003](./0003-product-scope-and-phasing.md) | Trading research workspace; agent infrastructure core; no investment advice or execution |
 
 ## AWS demo (infra + delivery + runtime)
 
@@ -14,7 +14,7 @@ Index of locked decisions for Personal Ops OS. Each ADR is one trade-off; groupe
 |-----|----------|
 | [0001](./0001-aws-pipeline-deploy-over-gitops.md) | GitHub Actions pipeline → ECS; GitOps as K8s scale-up |
 | [0002](./0002-aws-full-vpc-private-rds.md) | Full VPC; RDS in private subnet |
-| [0004](./0004-aws-eventbridge-ecs-poll-scheduling.md) | EventBridge → ECS RunTask for polls; API service read-only |
+| [0004](./0004-aws-eventbridge-ecs-poll-scheduling.md) | EventBridge → ECS RunTask for scheduled workflow creation; workers execute tasks |
 
 ## How to read these
 

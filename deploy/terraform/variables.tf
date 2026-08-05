@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "Prefix for resource names"
   type        = string
-  default     = "personal-ops"
+  default     = "vibe-trading-research-agent"
 }
 
 variable "environment" {
@@ -25,7 +25,7 @@ variable "vpc_cidr" {
 variable "db_username" {
   description = "RDS master username"
   type        = string
-  default     = "personalops"
+  default     = "vibetrading"
 }
 
 variable "db_password" {
@@ -37,7 +37,7 @@ variable "db_password" {
 variable "db_name" {
   description = "Initial database name"
   type        = string
-  default     = "personalops"
+  default     = "vibetrading"
 }
 
 variable "ecs_task_cpu" {
@@ -58,22 +58,40 @@ variable "ecs_desired_count" {
   default     = 1
 }
 
-variable "ecs_poller_cpu" {
-  description = "Fargate CPU units for one-shot poller tasks"
-  type        = number
-  default     = 256
-}
-
-variable "ecs_poller_memory" {
-  description = "Fargate memory (MiB) for one-shot poller tasks"
+variable "ecs_worker_cpu" {
+  description = "Fargate CPU units for worker tasks"
   type        = number
   default     = 512
 }
 
-variable "poll_schedule_expression" {
-  description = "EventBridge schedule for connector polls (e.g. rate(5 minutes))"
+variable "ecs_worker_memory" {
+  description = "Fargate memory (MiB) for worker tasks"
+  type        = number
+  default     = 1024
+}
+
+variable "ecs_worker_desired_count" {
+  description = "Number of ECS worker service tasks"
+  type        = number
+  default     = 1
+}
+
+variable "ecs_scheduler_cpu" {
+  description = "Fargate CPU units for one-shot scheduler tasks"
+  type        = number
+  default     = 256
+}
+
+variable "ecs_scheduler_memory" {
+  description = "Fargate memory (MiB) for one-shot scheduler tasks"
+  type        = number
+  default     = 512
+}
+
+variable "workflow_schedule_expression" {
+  description = "EventBridge schedule for creating scheduled workflow runs (e.g. rate(1 day))"
   type        = string
-  default     = "rate(5 minutes)"
+  default     = "rate(1 day)"
 }
 
 variable "container_image" {
@@ -91,5 +109,5 @@ variable "github_org" {
 variable "github_repo" {
   description = "GitHub repo name for OIDC trust"
   type        = string
-  default     = "personal-ops"
+  default     = "vibe-trading-research-agent"
 }

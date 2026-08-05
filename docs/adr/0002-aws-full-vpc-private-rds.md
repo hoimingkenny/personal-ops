@@ -8,7 +8,7 @@ Terraform provisions a **full VPC**: public subnets (ALB), private subnets (ECS 
 
 ```
 Internet → ALB (public) → ECS (private) → RDS (private)
-                              ↓ NAT + VPC endpoints (pollers reach upstream APIs)
+                              ↓ NAT + VPC endpoints (workers/scheduler reach sources and model APIs)
 ```
 
 **Interview line:** *"RDS has no public IP; only ECS can connect. ALB is the sole public entry."*

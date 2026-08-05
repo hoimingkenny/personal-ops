@@ -55,6 +55,28 @@ resource "aws_iam_role" "ecs_task" {
   })
 }
 
+resource "aws_iam_role_policy" "ecs_task_artifacts" {
+  name = "${var.project_name}-${var.environment}-ecs-task-artifacts"
+  role = aws_iam_role.ecs_task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:ListBucket"
+      ]
+      Resource = [
+        aws_s3_bucket.artifacts.arn,
+        "${aws_s3_bucket.artifacts.arn}/*"
+      ]
+    }]
+  })
+}
+
 # GitHub Actions OIDC — deploy role (wire when github_org is set)
 data "aws_iam_openid_connect_provider" "github" {
   count = var.github_org != "" ? 1 : 0

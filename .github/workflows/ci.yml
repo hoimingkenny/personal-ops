@@ -14,9 +14,9 @@ permissions:
   contents: read
 
 env:
-  JAVA_VERSION: "21"
+  PYTHON_VERSION: "3.12"
   DOCKERFILE: deploy/docker/Dockerfile
-  IMAGE_NAME: personal-ops
+  IMAGE_NAME: vibe-trading-research-agent
 
 jobs:
   build-test-scan:
@@ -26,15 +26,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: temurin
-          cache: maven
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
 
-      - name: Build and test
-        run: ./mvnw -B verify
+      - name: Install
+        run: python -m pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Type check
+        run: mypy app
+
+      - name: Test
+        run: pytest
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

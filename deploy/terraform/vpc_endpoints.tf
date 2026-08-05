@@ -1,5 +1,5 @@
 # Reduce NAT traffic for AWS API calls (ECR pull, Secrets Manager, logging).
-# External upstream APIs (weather, exchanges) still use NAT.
+# External source and model APIs still use NAT.
 
 resource "aws_vpc_endpoint" "s3" {
   vpc_id            = aws_vpc.main.id
