@@ -19,7 +19,7 @@ resource "aws_lb_target_group" "app" {
 
   health_check {
     enabled             = true
-    path                = "/actuator/health/readiness"
+    path                = "/health/ready"
     healthy_threshold   = 2
     unhealthy_threshold = 3
     timeout             = 5

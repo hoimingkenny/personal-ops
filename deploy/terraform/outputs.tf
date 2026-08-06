@@ -33,6 +33,11 @@ output "ecs_service_name" {
   value       = aws_ecs_service.app.name
 }
 
+output "ecs_worker_service_name" {
+  description = "ECS worker service name"
+  value       = aws_ecs_service.worker.name
+}
+
 output "rds_endpoint" {
   description = "RDS hostname (private — reachable only from ECS)"
   value       = aws_db_instance.main.address
@@ -53,12 +58,22 @@ output "cloudwatch_log_group" {
   value       = aws_cloudwatch_log_group.ecs.name
 }
 
-output "eventbridge_poll_rule_name" {
-  description = "EventBridge rule name for scheduled poller RunTask"
-  value       = aws_cloudwatch_event_rule.poll_schedule.name
+output "artifact_bucket_name" {
+  description = "Private S3 bucket for raw documents, extracted artifacts, digests, and eval exports"
+  value       = aws_s3_bucket.artifacts.bucket
 }
 
-output "ecs_poller_task_definition_arn" {
-  description = "ECS task definition ARN for one-shot poller tasks"
-  value       = aws_ecs_task_definition.poller.arn
+output "eventbridge_workflow_rule_name" {
+  description = "EventBridge rule name for scheduled workflow RunTask"
+  value       = aws_cloudwatch_event_rule.workflow_schedule.name
+}
+
+output "ecs_scheduler_task_definition_arn" {
+  description = "ECS task definition ARN for one-shot scheduler tasks"
+  value       = aws_ecs_task_definition.scheduler.arn
+}
+
+output "ecs_worker_task_definition_arn" {
+  description = "ECS task definition ARN for worker service tasks"
+  value       = aws_ecs_task_definition.worker.arn
 }

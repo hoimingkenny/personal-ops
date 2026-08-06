@@ -1,81 +1,110 @@
-# Personal Ops OS
+# Vibe Trading Research Agent
 
-A forkable Java/Spring Boot **single-tenant template**: one operator per deployment. Background polling, latest-good snapshot storage, health monitoring, and a **read API** (MVP A). Cloud and CI/CD are first-class — not an afterthought.
+A cloud-native AI agent workflow backend for source-backed trading research. It ingests public financial sources and user-provided reports, builds an evidence library, runs specialized async agents, verifies numeric and citation claims, and produces trading research artifacts with auditable provenance.
 
-Decisions: [`docs/adr/README.md`](docs/adr/README.md). Active build spec (when created): [`.scratch/personal-ops-os/spec.md`](.scratch/personal-ops-os/spec.md).
+Decisions: [`docs/adr/README.md`](docs/adr/README.md). Active build spec (when created): [`.scratch/vibe-trading-research-agent/spec.md`](.scratch/vibe-trading-research-agent/spec.md).
 
 ## Build
 
-**Maven**:
-The build tool for this project. CI runs `./mvnw -B verify`; the Docker image copies the Spring Boot repackaged JAR from `target/`.
-_Avoid_: Gradle, `./gradlew`.
+**Python/FastAPI**:
+The application stack for this project. CI runs `ruff`, `mypy`, and `pytest`; the Docker image runs the FastAPI app through Uvicorn.
+_Avoid_: Spring Boot, Maven, Gradle, Java-first implementation.
 
 ## Product identity
 
 **Target role**:
-Backend / platform engineer (Java + cloud). CV bullets lead with AWS ownership, Terraform, and CI/CD; the aggregation app makes the deploy real.
-_Avoid_: pure DevOps-only framing, pure IAM-only framing, AI-agent framing.
+Backend / platform / AI agent infrastructure engineer. CV bullets lead with async workflows, retrieval, evaluation, cloud ownership, performance, and reliability.
+_Avoid_: pure DevOps-only framing, pure IAM-only framing, thin AI-wrapper framing.
 
-**Personal Ops OS**:
-The reusable backend template this repo ships. Forkers add connectors; poll-and-store core and deploy scaffold stay unchanged.
-_Avoid_: Personal Ops Dashboard, personal assistant, AI agent, hosted multi-tenant platform.
+**Vibe Trading Research Agent**:
+The product this repo ships: a self-hosted trading research agent/workspace. Trading research is the first workload; the reusable asset is the workflow, retrieval, evaluation, and agent runtime beneath it.
+_Avoid_: finance chatbot, stock picker, trading bot, investment advice app.
 
-**Single-tenant template**:
-One deployment serves one operator (you). Not login/signup SaaS — fork the repo for a second person.
-_Avoid_: multi-tenant platform, user spaces, per-user API key vault.
+**Trading researcher**:
+The primary user: a person who wants to process market/news content, public filings, and company reports into source-backed research artifacts for market understanding.
+_Avoid_: trading desk, portfolio manager, financial advisor.
+
+**Trading research workload**:
+The first use case for the platform: ingest filings, annual reports, transcripts, market/news content, and user-provided report URLs; extract evidence; answer document questions; and generate source-backed research artifacts.
+_Avoid_: trading bot, automated order placement, portfolio management, buy/sell/hold advice.
+
+**Source-backed research artifact**:
+The core output: a structured digest, report brief, watchlist note, or later bull/bear analysis with citations to source documents, pages, sections, tables, or URLs.
+_Avoid_: investment recommendation, uncited AI summary, chat transcript as the primary artifact.
+
+**MVP input scope**:
+Financial news feeds and user-provided company report or PDF URLs. The platform may ingest web pages and PDFs, but does not discover every filing source automatically in MVP.
+_Avoid_: broker integrations, paid data providers, full SEC/HKEX crawler, real-time market data, portfolio import.
+
+**Source registry**:
+The governed catalog of sources the platform may ingest. Each source records type, region, sector, compliance tier, license notes, rate limit, freshness expectation, connector type, and enabled status.
+_Avoid_: random web browsing, untracked scraping, assuming open-source connector code overrides source data terms.
+
+**Research-workspace product**:
+The product centers on a source-backed evidence library and generated research artifacts. Daily digest and report brief workflows come first; chat/Q&A may be added later on top of the same evidence store.
+_Avoid_: chatbot-first design, chat transcript as output, one-question demo.
+
+**Agent infrastructure core**:
+Reusable backend runtime for durable agent workflows: task orchestration, typed tool calls, retrieval memory, evaluation gates, human review states, and cost/latency observability.
+_Avoid_: one-off prompt chain, chatbot wrapper, untracked LLM call.
 
 **Cloud demo**:
 A short-lived, documented AWS deployment (ECS, ECR, RDS, Secrets Manager, EventBridge) used to prove end-to-end CI/CD. Tear down after capture; do not imply 24/7 production traffic.
 _Avoid_: production environment, always-on AWS instance.
 
-**CV MVP (scope A)**:
-Cloud-first minimum: Terraform apply → GitHub Actions OIDC deploy to ECS → ALB readiness smoke test → destroy; weather + uptime reference connectors; poll-and-store + EventBridge poller; read **API only** (no UI); Actuator + Flyway; README + architecture diagram + screenshots.
-_Avoid_: React UI, dashboard, digest, full connector lineup, LLM, WhatsApp, Redis, Helm, Cloudflare.
-
-**CV MVP A′ (performance follow-on)**:
-After A is demoable: Redis cache on read API, k6 load tests, P99 in `docs/benchmarks.md`, optional multi-task ECS. Game Hub–style numbers from **this** project's benchmarks only.
-_Avoid_: copying Game Hub TPS/user counts; building a platform to fake concurrency.
-
-**CV MVP B (later)**:
-Helm on k3s/kind; optionally one personal connector (e.g. Strava). Only after A's apply → deploy → smoke → destroy works.
-_Avoid_: starting B before A demoable.
-
-**Multi-tenant platform**:
-Explicitly rejected — register/login, user spaces, per-user API key UI. See [ADR 0003](./docs/adr/0003-product-scope-and-phasing.md).
-_Avoid_: hosted SaaS, tenant isolation, credential vault per user.
-
-**Reference connector**:
-A working example source (weather, uptime) that demonstrates the connector interface. Personal sources (Binance, Strava) live in the fork, not template defaults.
-_Avoid_: built-in source, core connector.
-
 ## Backend model
 
 **Source connector**:
-Pluggable adapter that fetches and normalises data from one upstream. Implements fetch + health reporting.
-_Avoid_: plugin, integration, provider (unless discussing Spring terminology).
+Pluggable adapter that fetches and normalizes one external source, such as a financial news feed, web article, report page, transcript, or PDF URL.
+_Avoid_: trading exchange connector, broker integration.
 
-**Latest-good snapshot**:
-The most recent successful payload for a source, retained in the store when a poll fails. Serve paths never overwrite good data with errors.
-_Avoid_: cache entry, last result.
+**Pipeline worker**:
+A deterministic backend worker that fetches, parses, chunks, stores, indexes, or publishes data. Pipeline workers do not make open-ended LLM judgments.
+_Avoid_: calling every background job an agent.
 
-**Poll-and-store**:
-Background jobs fetch upstreams and write snapshots to the store. The read API reads only from the store — never from upstreams on the request path. On AWS, EventBridge triggers poller tasks; locally, `@Scheduled` is fine.
-_Avoid_: fetch-on-request, live query, pull inside the API service.
+**Agent worker**:
+A bounded AI worker that makes judgment calls using retrieved evidence and produces typed, reviewable artifacts. Examples: classifier/ranker, brief writer, citation verifier, change detector.
+_Avoid_: autonomous swarm member, free-form chatbot persona.
 
-**Read API**:
-The sole user-facing output in MVP A — JSON snapshots + staleness. No dashboard or digest until later milestones.
-_Avoid_: dashboard (MVP A), calling upstreams from controllers.
+**Skill**:
+A reusable capability an agent can invoke, such as document search, table extraction, metric extraction, citation verification, digest writing, or change comparison.
+_Avoid_: vague talent, prompt fragment with no schema.
 
-**Publisher**:
-Pluggable output that reads snapshots from the store. **MVP A:** read API only. **Later:** plain-text digest, webhooks.
-_Avoid_: channel, notifier; claiming digest ships in MVP A.
+**Tool call**:
+A logged, typed invocation of a backend capability by an agent or skill. Tool calls record input, output, duration, errors, model/prompt version where relevant, and cost.
+_Avoid_: hidden LLM side effect, untracked API call.
 
-**Spring profile (runtime)**:
-| Profile | Runs as | Role |
+**Bounded ReAct loop**:
+A controlled Think-Act-Observe cycle where an agent may call allowed tools up to explicit limits for steps, latency, and cost before producing structured output.
+_Avoid_: unbounded autonomous loop, agent that can call any tool.
+
+**Multi-agent workflow**:
+An orchestrated workflow where specialized agent workers collaborate through durable task state and shared evidence. It is controlled by the workflow orchestrator, not emergent free-form chat.
+_Avoid_: swarm branding, autonomous agent society.
+
+**Retrieval memory**:
+Long-lived searchable knowledge: source documents, chunks, tables, metrics, news items, prior digests, and citation anchors.
+_Avoid_: mystical agent memory, opaque chat history.
+
+**Workflow memory**:
+Durable per-run state: workflow tasks, task attempts, tool calls, events, intermediate artifacts, retries, and failures.
+_Avoid_: in-memory-only context that disappears after a process restart.
+
+**Evaluation memory**:
+Stored quality history: failed citation checks, numeric mismatches, unsupported claims, human corrections, eval scores, and prompt/model version comparisons.
+_Avoid_: manual vibes-based output review.
+
+**Quality gate**:
+An automated or human review check that must pass before a digest is published, such as citation coverage, numeric accuracy, schema validity, unsupported-claim detection, and cost/latency budgets.
+_Avoid_: publishing raw LLM output directly.
+
+**Runtime role**:
+| Role | Runs as | Purpose |
 |---------|---------|------|
-| `local` | Web + `@Scheduled` polls | Laptop / docker-compose |
-| `aws` | Web only | Always-on ECS API service |
-| `aws,poller` | No web; poll once and exit | EventBridge ECS RunTask |
+| `local` | API + worker locally | Laptop / docker-compose |
+| `api` | Web API only | ECS API service |
+| `worker` | Background workers | ECS worker service |
+| `scheduler` | Scheduled run trigger | EventBridge ECS RunTask |
 
 ## Cloud and delivery
 
@@ -87,13 +116,13 @@ _Avoid_: manual deploy as the primary story; GitOps for AWS (GitOps is K8s scale
 Subnet with no direct internet ingress. ECS tasks and RDS live here; outbound traffic uses NAT or VPC endpoints.
 _Avoid_: internal subnet (unless matching AWS console label).
 
-**EventBridge poll**:
-EventBridge schedule → one-shot ECS Fargate RunTask with `aws,poller` profile. Replaces in-process `@Scheduled` on AWS.
+**EventBridge scheduled workflow**:
+EventBridge schedule → one-shot ECS Fargate RunTask with the `scheduler` runtime role. It creates ingestion or digest workflow runs; workers execute tasks asynchronously.
 _Avoid_: CloudWatch Events (legacy name in conversation only — prefer EventBridge in CV/docs).
 
-**Helm chart**:
-Kubernetes packaging for local k3s/kind — **MVP B**, not A. Same container image as AWS.
-_Avoid_: implying Helm exists before scope B; K8s config bundle.
+**Kubernetes deployment path**:
+Later packaging for k3s/kind or EKS if the AWS ECS demo is already working and measured. Same container image and API/worker/scheduler split should carry over.
+_Avoid_: implying Helm or Kubernetes exists in MVP.
 
 ## Git workflow
 

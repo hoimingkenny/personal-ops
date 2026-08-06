@@ -1,25 +1,25 @@
-# EventBridge → ECS RunTask — scheduled connector polls.
+# EventBridge → ECS RunTask — scheduled workflow creation.
 # See docs/adr/0004-aws-eventbridge-ecs-poll-scheduling.md
 
-resource "aws_cloudwatch_event_rule" "poll_schedule" {
-  name                = "${var.project_name}-${var.environment}-poll-schedule"
-  description         = "Trigger one-shot ECS poller tasks for Personal Ops OS"
-  schedule_expression = var.poll_schedule_expression
+resource "aws_cloudwatch_event_rule" "workflow_schedule" {
+  name                = "${var.project_name}-${var.environment}-workflow-schedule"
+  description         = "Trigger one-shot ECS scheduler tasks for Vibe Trading workflow creation"
+  schedule_expression = var.workflow_schedule_expression
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-poll-schedule"
+    Name = "${var.project_name}-${var.environment}-workflow-schedule"
   }
 }
 
-resource "aws_cloudwatch_event_target" "poll_ecs" {
-  rule      = aws_cloudwatch_event_rule.poll_schedule.name
-  target_id = "poll-ecs-run-task"
+resource "aws_cloudwatch_event_target" "workflow_ecs" {
+  rule      = aws_cloudwatch_event_rule.workflow_schedule.name
+  target_id = "workflow-scheduler-ecs-run-task"
   arn       = aws_ecs_cluster.main.arn
   role_arn  = aws_iam_role.eventbridge_ecs.arn
 
   ecs_target {
     task_count          = 1
-    task_definition_arn = aws_ecs_task_definition.poller.arn
+    task_definition_arn = aws_ecs_task_definition.scheduler.arn
     launch_type         = "FARGATE"
     platform_version    = "LATEST"
 
@@ -66,7 +66,7 @@ resource "aws_iam_role_policy" "eventbridge_ecs_run_task" {
         Effect = "Allow"
         Action = ["ecs:RunTask"]
         Resource = [
-          aws_ecs_task_definition.poller.arn
+          aws_ecs_task_definition.scheduler.arn
         ]
         Condition = {
           ArnLike = {

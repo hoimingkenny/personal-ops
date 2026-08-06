@@ -40,18 +40,19 @@ resource "aws_ecs_task_definition" "app" {
     }]
 
     environment = [
-      { name = "SPRING_PROFILES_ACTIVE", value = "aws" },
-      { name = "AWS_REGION", value = var.aws_region }
+      { name = "APP_ROLE", value = "api" },
+      { name = "AWS_REGION", value = var.aws_region },
+      { name = "VIBE_TRADING_ARTIFACT_BUCKET", value = aws_s3_bucket.artifacts.bucket }
     ]
 
     secrets = [{
-      name      = "SPRING_DATASOURCE_URL"
-      valueFrom = "${aws_secretsmanager_secret.db_credentials.arn}:jdbc_url::"
+      name      = "DATABASE_URL"
+      valueFrom = "${aws_secretsmanager_secret.db_credentials.arn}:database_url::"
     }, {
-      name      = "SPRING_DATASOURCE_USERNAME"
+      name      = "DATABASE_USERNAME"
       valueFrom = "${aws_secretsmanager_secret.db_credentials.arn}:username::"
     }, {
-      name      = "SPRING_DATASOURCE_PASSWORD"
+      name      = "DATABASE_PASSWORD"
       valueFrom = "${aws_secretsmanager_secret.db_credentials.arn}:password::"
     }]
 
@@ -65,7 +66,7 @@ resource "aws_ecs_task_definition" "app" {
     }
 
     healthCheck = {
-      command     = ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health/liveness || exit 1"]
+      command     = ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8080/health/live', timeout=3)\" || exit 1"]
       interval    = 30
       timeout     = 5
       retries     = 3

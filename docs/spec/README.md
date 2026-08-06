@@ -8,7 +8,9 @@ Where product and build documentation lives.
 |-----|---------|
 | [`CONTEXT.md`](../../CONTEXT.md) | Domain glossary and naming |
 | [`docs/adr/`](../adr/README.md) | Locked decisions (scope, AWS, scheduling) |
-| [`.scratch/personal-ops-os/spec.md`](../../.scratch/personal-ops-os/spec.md) | **Active build spec** — drives tickets and `/implement` |
+| [`.scratch/vibe-trading-research-agent/spec.md`](../../.scratch/vibe-trading-research-agent/spec.md) | **Active build spec** — created by `/to-spec`; drives tickets and `/implement` |
+| [`docs/spec/senior-skill-map.md`](./senior-skill-map.md) | Evidence map for making the repo read as senior backend/platform work |
+| [`docs/spec/agent-harness.md`](./agent-harness.md) | Harness contract for bounded agents, tools, quality gates, evals, and replay |
 | [`docs/ci-cd.md`](../ci-cd.md) | CI/CD and GitHub setup |
 | [`docs/aws-demo-runbook.md`](../aws-demo-runbook.md) | Terraform apply → deploy → destroy |
 
@@ -16,4 +18,4 @@ When the active spec and an ADR disagree, **the ADR wins**.
 
 ## Removed
 
-The original `personal-ops-dashboard-spec_1.md` (Dashboard-era brainstorm) was deleted — decisions live in **ADRs** and **CONTEXT**; implementation is driven by **[`.scratch/personal-ops-os/spec.md`](../../.scratch/personal-ops-os/spec.md)**.
+Earlier dashboard-era brainstorms were superseded. Decisions live in **ADRs** and **CONTEXT**; implementation detail will live in **`.scratch/vibe-trading-research-agent/spec.md`** after `/to-spec`.

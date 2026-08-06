@@ -12,14 +12,14 @@ permissions:
   contents: read
 
 env:
-  JAVA_VERSION: "21"
+  PYTHON_VERSION: "3.12"
   DOCKERFILE: deploy/docker/Dockerfile
   # Override via repository variables (Settings → Secrets and variables → Actions)
   AWS_REGION: ${{ vars.AWS_REGION || 'ap-southeast-1' }}
-  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY || 'personal-ops' }}
-  ECS_CLUSTER: ${{ vars.ECS_CLUSTER || 'personal-ops-demo' }}
-  ECS_SERVICE: ${{ vars.ECS_SERVICE || 'personal-ops-demo-service' }}
-  ECS_TASK_FAMILY: ${{ vars.ECS_TASK_FAMILY || 'personal-ops-demo' }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY || 'vibe-trading-research-agent' }}
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER || 'vibe-trading-research-agent-demo' }}
+  ECS_SERVICE: ${{ vars.ECS_SERVICE || 'vibe-trading-research-agent-demo-service' }}
+  ECS_TASK_FAMILY: ${{ vars.ECS_TASK_FAMILY || 'vibe-trading-research-agent-demo' }}
   CONTAINER_NAME: app
 
 jobs:
@@ -37,15 +37,23 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: temurin
-          cache: maven
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
 
-      - name: Build and test
-        run: ./mvnw -B verify
+      - name: Install
+        run: python -m pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Type check
+        run: mypy app
+
+      - name: Test
+        run: pytest
 
       - name: Login to Amazon ECR
         id: ecr-login
@@ -94,7 +102,7 @@ jobs:
             exit 0
           fi
           for i in $(seq 1 12); do
-            if curl -sf "http://${ALB_DNS_NAME}/actuator/health/readiness"; then
+            if curl -sf "http://${ALB_DNS_NAME}/health/ready"; then
               echo ""
               echo "Readiness check passed"
               exit 0

@@ -1,6 +1,6 @@
 # CI/CD
 
-Enterprise-shaped pipeline for a Spring Boot service. AWS demo uses **pipeline-triggered deploy to ECS**; see [ADR 0001](./adr/0001-aws-pipeline-deploy-over-gitops.md) for why not GitOps in v1.
+Enterprise-shaped pipeline for a FastAPI service. AWS demo uses **pipeline-triggered deploy to ECS**; see [ADR 0001](./adr/0001-aws-pipeline-deploy-over-gitops.md) for why not GitOps in v1.
 
 ## Workflows
 
@@ -9,9 +9,9 @@ Enterprise-shaped pipeline for a Spring Boot service. AWS demo uses **pipeline-t
 Runs on every pull request:
 
 1. Checkout
-2. Build (Maven) + unit tests
-3. Integration tests (Testcontainers + Postgres)
-4. Docker build (Spring Boot layered JAR)
+2. Install Python dependencies
+3. Lint, type check, and test
+4. Docker build
 5. Trivy image scan — fail on CRITICAL
 6. (No deploy)
 
@@ -25,7 +25,9 @@ Runs on `workflow_dispatch` or version tag (e.g. `v0.1.0`):
 4. Push to **ECR**
 5. Update **ECS** task definition / service (new image)
 6. Wait for steady state
-7. Smoke test `GET /actuator/health/readiness`
+7. Smoke test `GET /health/ready`
+
+Current scaffold updates the API ECS service first. Worker/scheduler task-definition rollout should be wired once the application runtime roles exist, so the deploy workflow can update all roles from the same image.
 
 ## AWS resources (Terraform)
 
@@ -34,12 +36,14 @@ Full VPC layout — see [ADR 0002](./adr/0002-aws-full-vpc-private-rds.md) and [
 | Resource | Role |
 |----------|------|
 | VPC | Public + private subnets across 2 AZs |
-| NAT gateway | Outbound internet for ECS tasks (upstream API polling) |
+| NAT gateway | Outbound internet for ECS workers and scheduler tasks (source ingestion / model APIs) |
 | VPC endpoints | ECR, Secrets Manager, CloudWatch Logs, S3 — less NAT traffic |
-| ALB | Public entry point; health check → `/actuator/health/readiness` |
-| ECS Fargate (service) | Always-on API in **private subnets** |
-| **EventBridge** | Schedule rule → **ECS RunTask** for one-shot poller jobs |
-| ECS Fargate (poller task) | Same image, `aws,poller` profile — poll once and exit |
+| ALB | Public entry point; health check → `/health/ready` |
+| ECS Fargate (API service) | Always-on API in **private subnets** |
+| ECS Fargate (worker service) | Background task execution for pipeline and agent workers |
+| **EventBridge** | Schedule rule → **ECS RunTask** for one-shot scheduler workflows |
+| ECS Fargate (scheduler task) | Same image, `scheduler` role — create due workflow runs and exit |
+| S3 | Raw financial documents, extracted artifacts, generated digests, eval exports |
 | RDS PostgreSQL | **Private subnet**, not publicly accessible |
 | Security groups | ALB → ECS :8080; ECS → RDS :5432 only |
 | ECR | Container registry |
@@ -49,14 +53,14 @@ Full VPC layout — see [ADR 0002](./adr/0002-aws-full-vpc-private-rds.md) and [
 
 Infra lives in `deploy/terraform/`. Runbook: apply → deploy → smoke test → destroy.
 
-## Local Kubernetes (Helm)
+## Local Kubernetes (later)
 
-Same image as AWS. Helm chart under `deploy/helm/` targets **k3s/kind**:
+Same image as AWS. A later Helm chart under `deploy/helm/` may target **k3s/kind**:
 
 - Deployment + Service (+ Ingress)
-- CronJob pollers
+- CronJob scheduled workflow creators
 - ConfigMap + Secret
-- Liveness/readiness → Spring Actuator
+- Liveness/readiness → FastAPI health endpoints
 
 No ArgoCD in v1. CI does not deploy to local k3s automatically.
 
@@ -70,17 +74,17 @@ PR merge → CI build/test/scan → push ECR → update image tag in deploy repo
 
 Keeps the build half identical; only the deploy trigger changes. See ADR 0001.
 
-## Spring Boot conventions
+## FastAPI conventions
 
-- **Layered Dockerfile** — dependency layer cached separately from app code
-- **Flyway** — schema migrations in repo
-- **Profiles** — `local` (docker-compose), `aws` (ECS + Secrets Manager)
-- **Actuator** — `/actuator/health/liveness`, `/actuator/health/readiness`
+- **Python packaging** — `pyproject.toml` with runtime and dev dependency groups
+- **Alembic** — schema migrations in repo
+- **Runtime roles** — `local`, `api`, `worker`, `scheduler`
+- **Health endpoints** — `/health/live`, `/health/ready`
 - **Structured JSON logs** — stdout → CloudWatch on ECS
 
 ## CV one-liner
 
-GitHub Actions (OIDC) builds and scans Docker images, pushes to ECR, and deploys to ECS Fargate with health-gated rollout; **EventBridge schedules connector polls as one-shot ECS tasks**; RDS and Secrets Manager via IAM task roles; infra in Terraform with documented apply/destroy runbook. Helm chart for local Kubernetes.
+GitHub Actions (OIDC) builds and scans Docker images, pushes to ECR, and deploys to ECS Fargate with health-gated rollout; **EventBridge creates scheduled ingestion/digest workflow runs as one-shot ECS tasks**; API and worker services share RDS-backed workflow state, S3 artifacts, and Secrets Manager via IAM task roles; infra in Terraform with documented apply/destroy runbook.
 
 ## GitHub repository setup
 
@@ -109,11 +113,18 @@ Ensure a GitHub OIDC provider exists in the AWS account (`token.actions.githubus
 | Name | Type | Value |
 |------|------|--------|
 | `AWS_REGION` | Variable | e.g. `ap-southeast-1` |
-| `ECR_REPOSITORY` | Variable | `personal-ops` (match Terraform `project_name`) |
+| `ECR_REPOSITORY` | Variable | `vibe-trading-research-agent` (match Terraform `project_name`) |
 | `ECS_CLUSTER` | Variable | `terraform output -raw ecs_cluster_name` |
 | `ECS_SERVICE` | Variable | `terraform output -raw ecs_service_name` |
-| `ECS_TASK_FAMILY` | Variable | `personal-ops-demo` (match Terraform task family) |
+| `ECS_TASK_FAMILY` | Variable | `vibe-trading-research-agent-demo` (match Terraform task family) |
 | `ALB_DNS_NAME` | Variable | `terraform output -raw alb_dns_name` |
+
+Later worker rollout variables:
+
+| Name | Type | Value |
+|------|------|--------|
+| `ECS_WORKER_SERVICE` | Variable | `terraform output -raw ecs_worker_service_name` |
+| `ECS_WORKER_TASK_FAMILY` | Variable | `vibe-trading-research-agent-demo-worker` |
 
 ### 3. Workflow files
 
@@ -122,7 +133,7 @@ Ensure a GitHub OIDC provider exists in the AWS account (`token.actions.githubus
 | `.github/workflows/ci.yml` | PR + push to `main` | Build, test, Docker build, Trivy scan |
 | `.github/workflows/deploy-demo.yml` | `workflow_dispatch` or tag `v*` | OIDC → ECR push → ECS deploy → smoke test |
 
-**Prerequisite:** Spring Boot app with `./mvnw` and `deploy/docker/Dockerfile` JAR build. Workflows will fail until the app scaffold exists.
+**Prerequisite:** FastAPI app with `pyproject.toml`, an `app` package, and `deploy/docker/Dockerfile`. Workflows will fail until the app scaffold exists.
 
 ### 4. First deploy
 
