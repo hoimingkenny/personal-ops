@@ -1,8 +1,8 @@
-# 12 — AWS API Worker Scheduler Demo
+# 13 — AWS API Worker Scheduler Demo
 
 **What to build:** A short-lived AWS demo where the same image runs as API, worker, and scheduler roles. The deployment proves cloud ownership through ECS, RDS, S3 artifacts, EventBridge scheduled workflow creation, Secrets Manager, CloudWatch logs, and health-gated deployment.
 
-**Blocked by:** 10 — Research API And SSE Progress.
+**Blocked by:** 11 — Research API And SSE Progress.
 
 **Status:** ready-for-agent
 

@@ -1,8 +1,8 @@
-# 08 — Digest Workflow Tracer Bullet
+# 09 — Digest Workflow Tracer Bullet
 
 **What to build:** The first end-to-end draft digest workflow over source-backed evidence. A user can request a digest, the system can select candidate evidence, run bounded agent steps, and store a draft research artifact.
 
-**Blocked by:** 07 — Bounded Agent Runtime.
+**Blocked by:** 08 — Bounded Agent Runtime.
 
 **Status:** ready-for-agent
 

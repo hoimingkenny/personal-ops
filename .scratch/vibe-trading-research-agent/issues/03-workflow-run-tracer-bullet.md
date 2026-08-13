@@ -1,8 +1,8 @@
-# 02 — Workflow Run Tracer Bullet
+# 03 — Workflow Run Tracer Bullet
 
 **What to build:** A minimal durable workflow path. A user can create a workflow run through the API, a worker can claim and complete its tasks, and the API can show status, attempts, events, retries, failures, and terminal state.
 
-**Blocked by:** 01 — FastAPI Spine And Local Runtime.
+**Blocked by:** 02 — Secret Provider And Vault Foundation.
 
 **Status:** ready-for-agent
 

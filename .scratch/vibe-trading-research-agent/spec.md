@@ -12,7 +12,7 @@ The user wants this project to be useful as a trading research workspace while a
 
 Build Vibe Trading Research Agent as a cloud-native AI agent workflow backend for source-backed trading research. The system ingests governed public financial sources and user-provided report/PDF URLs, stores raw and processed evidence, retrieves relevant chunks/tables/news items, coordinates deterministic pipeline workers and bounded agent workers, verifies citation and numeric claims, and publishes source-backed research artifacts.
 
-The first product surface is digest-first, not chatbot-first. MVP workflows produce daily financial news digests and report briefs. The reusable core is the agent infrastructure beneath the product: workflow orchestration, Skills-Agent separation, bounded ReAct loops, typed tool calling, retrieval/workflow/evaluation memory, quality gates, replay, SSE progress, and AWS runtime roles.
+The first product surface is digest-first, not chatbot-first. MVP workflows produce daily financial news digests and report briefs. The reusable core is the agent infrastructure beneath the product: workflow orchestration, secret-provider isolation with HashiCorp Vault prioritized early, Skills-Agent separation, bounded ReAct loops, typed tool calling, retrieval/workflow/evaluation memory, quality gates, replay, SSE progress, and AWS runtime roles.
 
 ## User Stories
 
@@ -50,24 +50,28 @@ The first product surface is digest-first, not chatbot-first. MVP workflows prod
 32. As an independent developer, I want cost and latency tracked by workflow, agent, model, and tool, so that infrastructure decisions are based on evidence.
 33. As an independent developer, I want PostgreSQL full-text retrieval first, so that the MVP stays simple until heavier search infrastructure is justified.
 34. As an independent developer, I want search benchmarks and query plans, so that bottlenecks can be identified before adding Redis, OpenSearch, Milvus, or pgvector.
-35. As a backend engineer, I want one FastAPI/Python codebase with multiple runtime roles, so that API, worker, and scheduler deployments share one image.
-36. As a backend engineer, I want an API runtime role for REST, SSE, workflow status, and artifact reads, so that user-facing traffic is isolated from background work.
-37. As a backend engineer, I want a worker runtime role for pipeline and agent task execution, so that long-running work is asynchronous.
-38. As a backend engineer, I want a scheduler runtime role triggered by EventBridge, so that scheduled workflows can be created by short-lived tasks.
-39. As a backend engineer, I want durable task claiming with database transactions, so that multiple workers can process tasks safely.
-40. As a backend engineer, I want retries, timeouts, attempts, and failure states, so that transient errors and permanent failures are explicit.
-41. As a backend engineer, I want idempotent ingestion, so that repeated fetches do not duplicate source artifacts or digest items.
-42. As a backend engineer, I want artifact storage separated from relational workflow state, so that raw documents and generated outputs are stored efficiently.
-43. As a backend engineer, I want database migrations managed through Alembic, so that schema evolution is explicit.
-44. As a backend engineer, I want readiness and liveness endpoints, so that local, CI, Docker, and ECS can verify health consistently.
-45. As a backend engineer, I want CI to run linting, typing, tests, Docker build, and image scanning, so that regressions are caught before deploy.
-46. As a backend engineer, I want GitHub Actions OIDC deployment to AWS, so that the demo avoids long-lived cloud credentials.
-47. As a backend engineer, I want ECS services in private subnets and RDS private by default, so that the cloud demo has a realistic security posture.
-48. As a backend engineer, I want CloudWatch logs and structured events, so that failures can be diagnosed from the deployed demo.
-49. As a backend engineer, I want a documented apply, deploy, smoke test, evidence capture, and destroy path, so that cloud spend stays controlled.
-50. As a hiring manager reviewing the project, I want to see source-backed artifacts and evaluation results, so that the project demonstrates engineering depth rather than only prompt design.
-51. As a hiring manager reviewing the project, I want to see measured latency, cost, and retrieval quality, so that performance and tradeoff thinking are visible.
-52. As a hiring manager reviewing the project, I want the README and evidence docs to be honest about scale, so that the project does not claim fake production experience.
+35. As a backend engineer, I want sensitive runtime values resolved through a secret provider boundary, so that app modules do not directly depend on environment variables or one cloud secret store.
+36. As a backend engineer, I want HashiCorp Vault represented early as a runtime secret provider, so that the project demonstrates secret isolation before workflow complexity grows.
+37. As a backend engineer, I want local `.env` secrets and deployable secrets to have different readiness behavior, so that local development stays ergonomic without hiding broken API/worker/scheduler configuration.
+38. As a backend engineer, I want missing, unauthorized, or malformed secrets to fail clearly, so that operational failure modes are explicit.
+39. As a backend engineer, I want one FastAPI/Python codebase with multiple runtime roles, so that API, worker, and scheduler deployments share one image.
+40. As a backend engineer, I want an API runtime role for REST, SSE, workflow status, and artifact reads, so that user-facing traffic is isolated from background work.
+41. As a backend engineer, I want a worker runtime role for pipeline and agent task execution, so that long-running work is asynchronous.
+42. As a backend engineer, I want a scheduler runtime role triggered by EventBridge, so that scheduled workflows can be created by short-lived tasks.
+43. As a backend engineer, I want durable task claiming with database transactions, so that multiple workers can process tasks safely.
+44. As a backend engineer, I want retries, timeouts, attempts, and failure states, so that transient errors and permanent failures are explicit.
+45. As a backend engineer, I want idempotent ingestion, so that repeated fetches do not duplicate source artifacts or digest items.
+46. As a backend engineer, I want artifact storage separated from relational workflow state, so that raw documents and generated outputs are stored efficiently.
+47. As a backend engineer, I want database migrations managed through Alembic, so that schema evolution is explicit.
+48. As a backend engineer, I want readiness and liveness endpoints, so that local, CI, Docker, and ECS can verify health consistently.
+49. As a backend engineer, I want CI to run linting, typing, tests, Docker build, and image scanning, so that regressions are caught before deploy.
+50. As a backend engineer, I want GitHub Actions OIDC deployment to AWS, so that the demo avoids long-lived cloud credentials.
+51. As a backend engineer, I want ECS services in private subnets and RDS private by default, so that the cloud demo has a realistic security posture.
+52. As a backend engineer, I want CloudWatch logs and structured events, so that failures can be diagnosed from the deployed demo.
+53. As a backend engineer, I want a documented apply, deploy, smoke test, evidence capture, and destroy path, so that cloud spend stays controlled.
+54. As a hiring manager reviewing the project, I want to see source-backed artifacts and evaluation results, so that the project demonstrates engineering depth rather than only prompt design.
+55. As a hiring manager reviewing the project, I want to see measured latency, cost, and retrieval quality, so that performance and tradeoff thinking are visible.
+56. As a hiring manager reviewing the project, I want the README and evidence docs to be honest about scale, so that the project does not claim fake production experience.
 
 ## Implementation Decisions
 
@@ -76,6 +80,8 @@ The first product surface is digest-first, not chatbot-first. MVP workflows prod
 - The MVP is digest-first and report-brief-first. Chat or Q&A may be added later on top of the same evidence store.
 - The stack is FastAPI/Python with PostgreSQL, Alembic, Docker, and AWS ECS/RDS/S3/EventBridge for the demo deployment.
 - One deployable image supports separate runtime roles: local, API, worker, and scheduler.
+- Secret access is an early foundation concern. Runtime secrets should flow through a secret provider boundary with local environment support first and HashiCorp Vault prioritized before workflow/orchestration implementation.
+- Vault should be introduced for secret isolation, explicit failure modes, auditability, and future dynamic credential support. It should not become a broad platform detour that delays the trading research workflow indefinitely.
 - The API role owns REST endpoints, workflow control, workflow status, artifact reads, retrieval/search reads, and SSE progress.
 - The worker role owns deterministic pipeline tasks and bounded agent tasks.
 - The scheduler role is a short-lived EventBridge-triggered task that creates scheduled workflow runs and exits.

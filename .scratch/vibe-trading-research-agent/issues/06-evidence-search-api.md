@@ -1,8 +1,8 @@
-# 05 — Evidence Search API
+# 06 — Evidence Search API
 
 **What to build:** A source-backed evidence search API over ingested news and report evidence. A user or agent can search evidence, filter by metadata, and receive results with citation anchors suitable for later research artifacts.
 
-**Blocked by:** 03 — Source Registry And News Ingestion; 04 — Report URL To Evidence Library.
+**Blocked by:** 04 — Source Registry And News Ingestion; 05 — Report URL To Evidence Library.
 
 **Status:** ready-for-agent
 

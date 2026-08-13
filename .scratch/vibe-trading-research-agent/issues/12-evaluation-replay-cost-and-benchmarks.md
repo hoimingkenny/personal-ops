@@ -1,8 +1,8 @@
-# 11 — Evaluation Replay Cost And Benchmarks
+# 12 — Evaluation Replay Cost And Benchmarks
 
 **What to build:** A measurable quality and performance layer for the research agent. A developer can run golden eval cases, replay stored workflows, inspect citation/numeric failures, and capture latency/cost benchmark evidence.
 
-**Blocked by:** 10 — Research API And SSE Progress.
+**Blocked by:** 11 — Research API And SSE Progress.
 
 **Status:** ready-for-agent
 

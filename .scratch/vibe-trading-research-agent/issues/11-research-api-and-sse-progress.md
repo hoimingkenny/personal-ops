@@ -1,8 +1,8 @@
-# 10 — Research API And SSE Progress
+# 11 — Research API And SSE Progress
 
 **What to build:** The user-facing research API and progress stream. A client can create research workflows, read artifacts and quality results, inspect workflow status, and subscribe to workflow progress through server-sent events.
 
-**Blocked by:** 09 — Citation And Numeric Quality Gates.
+**Blocked by:** 10 — Citation And Numeric Quality Gates.
 
 **Status:** ready-for-agent
 
