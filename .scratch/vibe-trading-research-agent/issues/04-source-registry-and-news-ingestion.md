@@ -1,8 +1,8 @@
-# 03 — Source Registry And News Ingestion
+# 04 — Source Registry And News Ingestion
 
 **What to build:** A governed source registry and the first idempotent news ingestion path. A developer can register or seed a public financial news source, run an ingestion workflow, and inspect stored source metadata and raw news artifacts with provenance.
 
-**Blocked by:** 02 — Workflow Run Tracer Bullet.
+**Blocked by:** 03 — Workflow Run Tracer Bullet.
 
 **Status:** ready-for-agent
 

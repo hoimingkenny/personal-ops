@@ -1,8 +1,8 @@
-# 09 — Citation And Numeric Quality Gates
+# 10 — Citation And Numeric Quality Gates
 
 **What to build:** Quality gates that decide whether a draft digest or report brief is safe to publish. Draft artifacts are checked for schema validity, citation coverage, unsupported claims, and numeric accuracy, then marked published or needs review.
 
-**Blocked by:** 08 — Digest Workflow Tracer Bullet.
+**Blocked by:** 09 — Digest Workflow Tracer Bullet.
 
 **Status:** ready-for-agent
 

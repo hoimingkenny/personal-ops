@@ -14,8 +14,10 @@ WORKDIR /app
 COPY pyproject.toml ./
 COPY app ./app
 
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir .
+RUN pip install --no-cache-dir --upgrade pip "setuptools>=78.1.1" "msgpack>=1.2.1" && \
+    pip install --no-cache-dir . && \
+    pip uninstall -y msgpack setuptools wheel && \
+    rm -rf /usr/local/lib/python3.12/site-packages/pip* /usr/local/lib/python3.12/ensurepip
 
 USER app
 EXPOSE 8080

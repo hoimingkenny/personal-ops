@@ -1,8 +1,8 @@
-# 06 — Skills And Tool Execution Registry
+# 07 — Skills And Tool Execution Registry
 
 **What to build:** A typed skills/tools layer that lets agents call backend capabilities safely. A tool such as evidence search or chunk lookup can be invoked through a registered contract, and every call is logged with enough context to debug behavior, cost, and failures.
 
-**Blocked by:** 05 — Evidence Search API.
+**Blocked by:** 06 — Evidence Search API.
 
 **Status:** ready-for-agent
 

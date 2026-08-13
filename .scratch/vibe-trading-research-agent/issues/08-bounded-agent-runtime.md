@@ -1,8 +1,8 @@
-# 07 — Bounded Agent Runtime
+# 08 — Bounded Agent Runtime
 
 **What to build:** A bounded ReAct-style agent runtime that can use only allowed tools, respects runtime budgets, and produces structured output or deterministic failure. This should make agent behavior observable and controlled rather than free-form.
 
-**Blocked by:** 06 — Skills And Tool Execution Registry.
+**Blocked by:** 07 — Skills And Tool Execution Registry.
 
 **Status:** ready-for-agent
 
